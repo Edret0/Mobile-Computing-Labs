@@ -1,7 +1,7 @@
 /*
  * @Author: ELEGOO
  * @Date: 2019-10-22 11:59:09
- * @LastEditTime: 2021-01-04 14:50:58
+ * @LastEditTime: 2020-12-29 16:02:26
  * @LastEditors: Changhua
  * @Description: Smart Robot Car V4.0
  * @FilePath: 
@@ -10,10 +10,6 @@
 #define _DeviceDriverSet_xxx0_H_
 
 #define _Test_DeviceDriverSet 0
-
-#define TimeCompensation 4 //时间补偿系数  （由于修改了T0定时器，导致标准库的 delay() 、millis()函数出现偏差，特此设置误差调节）
-extern unsigned long _millis();
-extern void _delay(unsigned long ms);
 
 /*RBG LED*/
 #include "FastLED.h"
@@ -96,22 +92,22 @@ public:
 #if _Test_DeviceDriverSet
   void DeviceDriverSet_Motor_Test(void);
 #endif
-  void DeviceDriverSet_Motor_control(boolean direction_A, uint8_t speed_A, //A组电机参数
-                                     boolean direction_B, uint8_t speed_B, //B组电机参数
-                                     boolean controlED                     //AB使能允许 true
-  );                                                                       //电机控制
+  void DeviceDriverSet_Motor_control(boolean direction_A, uint8_t speed_A, //Group A motor parameters
+                                     boolean direction_B, uint8_t speed_B, //Group B motor parameters
+                                     boolean controlED                     //AB enable setting (true)
+  );                                                                       //motor control
 private:
   // #define PIN_Motor_PWMA 5
   // #define PIN_Motor_PWMB 6
   // #define PIN_Motor_STBY 8
   // #define PIN_Motor_BIN_1 7
   // #define PIN_Motor_AIN_1 9
-// DRV8835
+//TB6612
 #define PIN_Motor_PWMA 5
 #define PIN_Motor_PWMB 6
-#define PIN_Motor_BIN_1 7
-#define PIN_Motor_AIN_1 8
-
+#define PIN_Motor_BIN_1 8
+#define PIN_Motor_AIN_1 7
+#define PIN_Motor_STBY 3
 public:
 #define speed_Max 255
 #define direction_just true

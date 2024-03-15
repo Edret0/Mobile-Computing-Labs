@@ -1,33 +1,22 @@
 /*
  * @Author: ELEGOO
  * @Date: 2019-10-22 11:59:09
- * @LastEditTime: 2021-01-04 14:30:13
+ * @LastEditTime: 2020-12-29 16:07:48
  * @LastEditors: Changhua
  * @Description: Smart Robot Car V4.0
  * @FilePath: 
  */
 #include "DeviceDriverSet_xxx0.h"
-#include "PinChangeInt.h"
+//#include "PinChangeInt.h"
 #include <avr/wdt.h>
-
-// static void
-// _delay(uint16_t _ms)
-// {
-//   wdt_reset();
-//   for (unsigned long i = 0; i < _ms; i++)
-//   {
-//     //delay(1);
-//     }
-// }
-
-extern unsigned long _millis()
+static void
+delay_xxx(uint16_t _ms)
 {
-  return millis() * TimeCompensation;
-}
-extern void _delay(unsigned long ms)
-{
-  delay(ms / TimeCompensation);
   wdt_reset();
+  for (unsigned long i = 0; i < _ms; i++)
+  {
+    delay(1);
+  }
 }
 /*RBG LED*/
 static uint32_t Color(uint8_t r, uint8_t g, uint8_t b)
@@ -44,7 +33,7 @@ void DeviceDriverSet_RBGLED::DeviceDriverSet_RBGLED_xxx(uint16_t Duration, uint8
   {
     leds[Number] = colour;
     FastLED.show();
-    _delay(Duration);
+    delay_xxx(Duration);
   }
 }
 void DeviceDriverSet_RBGLED::DeviceDriverSet_RBGLED_Init(uint8_t set_Brightness)
@@ -57,10 +46,10 @@ void DeviceDriverSet_RBGLED::DeviceDriverSet_RBGLED_Test(void)
 {
   leds[0] = CRGB::White;
   FastLED.show();
-  _delay(50);
+  delay_xxx(50);
   leds[1] = CRGB::Red;
   FastLED.show();
-  _delay(50);
+  delay_xxx(50);
   DeviceDriverSet_RBGLED_xxx(50 /*Duration*/, 5 /*Traversal_Number*/, CRGB::Black);
 }
 #endif
@@ -88,10 +77,10 @@ static void attachPinChangeInterrupt_GetKeyValue(void)
   DeviceDriverSet_Key Key;
   static uint32_t keyValue_time = 0;
   static uint8_t keyValue_temp = 0;
-  if ((_millis() - keyValue_time) > 500)
+  if ((millis() - keyValue_time) > 500)
   {
     keyValue_temp++;
-    keyValue_time = _millis();
+    keyValue_time = millis();
     if (keyValue_temp > keyValue_Max)
     {
       keyValue_temp = 0;
@@ -102,7 +91,8 @@ static void attachPinChangeInterrupt_GetKeyValue(void)
 void DeviceDriverSet_Key::DeviceDriverSet_Key_Init(void)
 {
   pinMode(PIN_Key, INPUT_PULLUP);
-  attachPinChangeInterrupt(PIN_Key, attachPinChangeInterrupt_GetKeyValue, FALLING);
+  //attachPinChangeInterrupt(PIN_Key, attachPinChangeInterrupt_GetKeyValue, FALLING);
+  attachInterrupt(0, attachPinChangeInterrupt_GetKeyValue, FALLING);
 }
 
 #if _Test_DeviceDriverSet
@@ -161,8 +151,8 @@ float DeviceDriverSet_Voltage::DeviceDriverSet_Voltage_getAnalogue(void)
 {
   //float Voltage = ((analogRead(PIN_Voltage) * 5.00 / 1024) * 7.67); //7.66666=((10 + 1.50) / 1.50)
   float Voltage = (analogRead(PIN_Voltage) * 0.0375);
-  Voltage = Voltage + (Voltage * 0.08); //补偿8%
-  //return (analogRead(PIN_Voltage) * 5.00 / 1024) * ((10 + 1.50) / 1.50); //读取电压值
+  Voltage = Voltage + (Voltage * 0.08); //Compensation 8%
+  //return (analogRead(PIN_Voltage) * 5.00 / 1024) * ((10 + 1.50) / 1.50); //Read voltage value
   return Voltage;
 }
 
@@ -171,7 +161,7 @@ void DeviceDriverSet_Voltage::DeviceDriverSet_Voltage_Test(void)
 {
   //float Voltage = ((analogRead(PIN_Voltage) * 5.00 / 1024) * 7.67); //7.66666=((10 + 1.50) / 1.50)
   float Voltage = (analogRead(PIN_Voltage) * 0.0375); //7.66666=((10 + 1.50) / 1.50)
-  Voltage = Voltage + (Voltage * 0.08);               //补偿8%
+  Voltage = Voltage + (Voltage * 0.08);               //Compensation 8%
   //Serial.println(analogRead(PIN_Voltage) * 4.97 / 1024);
   Serial.println(Voltage);
 }
@@ -183,87 +173,66 @@ void DeviceDriverSet_Motor::DeviceDriverSet_Motor_Init(void)
   pinMode(PIN_Motor_PWMB, OUTPUT);
   pinMode(PIN_Motor_AIN_1, OUTPUT);
   pinMode(PIN_Motor_BIN_1, OUTPUT);
-  // 禁止中断
-  cli();
-  TCCR0B = TCCR0B & 0b11111000 | 0x04; //T0 = 244.4Hz  (T0  clkI/O/256 (From prescaler))见手册128
-  // 允许中断
-  sei();
-  // analogWrite(PIN_Motor_PWMA, 250);
-  // analogWrite(PIN_Motor_PWMB, 127);
+  pinMode(PIN_Motor_STBY, OUTPUT);
 }
 
 #if _Test_DeviceDriverSet
 void DeviceDriverSet_Motor::DeviceDriverSet_Motor_Test(void)
 {
+  //A...Right
+  //B...Left
+  digitalWrite(PIN_Motor_STBY, HIGH);
 
-  for (;;)
-  {
-    // digitalWrite(PIN_Motor_AIN_1, LOW);
-    // analogWrite(PIN_Motor_PWMA, 100);
-    // digitalWrite(PIN_Motor_BIN_1, HIGH);
-    // analogWrite(PIN_Motor_PWMB, 100);
+  digitalWrite(PIN_Motor_AIN_1, HIGH);
+  analogWrite(PIN_Motor_PWMA, 100);
+  digitalWrite(PIN_Motor_BIN_1, HIGH);
+  analogWrite(PIN_Motor_PWMB, 100);
+  delay_xxx(1000);
 
-    // _delay(3000);
+  digitalWrite(PIN_Motor_STBY, LOW);
+  delay_xxx(1000);
+  digitalWrite(PIN_Motor_STBY, HIGH);
+  digitalWrite(PIN_Motor_AIN_1, LOW);
+  analogWrite(PIN_Motor_PWMA, 100);
+  digitalWrite(PIN_Motor_BIN_1, LOW);
+  analogWrite(PIN_Motor_PWMB, 100);
 
-    // digitalWrite(PIN_Motor_AIN_1, HIGH);
-    // analogWrite(PIN_Motor_PWMA, 100);
-    // digitalWrite(PIN_Motor_BIN_1, LOW);
-    // analogWrite(PIN_Motor_PWMB, 100);
-    // _delay(3000);
-
-    digitalWrite(PIN_Motor_AIN_1, LOW);
-    analogWrite(PIN_Motor_PWMA, 200);
-    digitalWrite(PIN_Motor_BIN_1, LOW);
-    analogWrite(PIN_Motor_PWMB, 200);
-
-    _delay(3000);
-
-    digitalWrite(PIN_Motor_AIN_1, HIGH);
-    analogWrite(PIN_Motor_PWMA, 200);
-    digitalWrite(PIN_Motor_BIN_1, HIGH);
-    analogWrite(PIN_Motor_PWMB, 200);
-    _delay(3000);
-  }
+  delay_xxx(1000);
 }
 #endif
 
 /*
- Motor_control：AB / 方向、速度
+ Motor_control：AB / movement direction and speed
 */
-void DeviceDriverSet_Motor::DeviceDriverSet_Motor_control(boolean direction_A, uint8_t speed_A, //A组电机参数
-                                                          boolean direction_B, uint8_t speed_B, //B组电机参数
-                                                          boolean controlED                     //AB使能允许 true
-                                                          )                                     //电机控制
+void DeviceDriverSet_Motor::DeviceDriverSet_Motor_control(boolean direction_A, uint8_t speed_A, //Group A motor parameters
+                                                          boolean direction_B, uint8_t speed_B, //Group B motor parameters
+                                                          boolean controlED                     //AB enable setting (true)
+                                                          )                                     //Motor control
 {
-  // if (speed_A > speed_Max) //最大输出速度量
-  // {
-  //   speed_A = speed_Max;
-  // }
-  // if (speed_B > speed_Max) //最大输出速度量
-  // {
-  //   speed_B = speed_Max;
-  // }
 
-  if (controlED == control_enable) //使能允许？
+  if (controlED == control_enable) //Enable motot control？
   {
+    digitalWrite(PIN_Motor_STBY, HIGH);
     { //A...Right
 
-      switch (direction_A) //方向控制
+      switch (direction_A) //movement direction control
       {
       case direction_just:
-        digitalWrite(PIN_Motor_AIN_1, LOW);
+        digitalWrite(PIN_Motor_AIN_1, HIGH);
         analogWrite(PIN_Motor_PWMA, speed_A);
         break;
       case direction_back:
 
-        digitalWrite(PIN_Motor_AIN_1, HIGH);
+        digitalWrite(PIN_Motor_AIN_1, LOW);
         analogWrite(PIN_Motor_PWMA, speed_A);
         break;
       case direction_void:
         analogWrite(PIN_Motor_PWMA, 0);
+        digitalWrite(PIN_Motor_STBY, LOW);
         break;
       default:
-        //analogWrite(PIN_Motor_PWMA, 0);
+        analogWrite(PIN_Motor_PWMA, 0);
+        digitalWrite(PIN_Motor_STBY, LOW);
         break;
       }
     }
@@ -282,15 +251,18 @@ void DeviceDriverSet_Motor::DeviceDriverSet_Motor_control(boolean direction_A, u
         break;
       case direction_void:
         analogWrite(PIN_Motor_PWMB, 0);
+        digitalWrite(PIN_Motor_STBY, LOW);
         break;
       default:
-        //analogWrite(PIN_Motor_PWMB, 0);
+        analogWrite(PIN_Motor_PWMB, 0);
+        digitalWrite(PIN_Motor_STBY, LOW);
         break;
       }
     }
   }
   else
   {
+    digitalWrite(PIN_Motor_STBY, LOW);
     return;
   }
 }
@@ -360,12 +332,12 @@ void DeviceDriverSet_Servo::DeviceDriverSet_Servo_Init(unsigned int Position_ang
   myservo.attach(PIN_Servo_z, 500, 2400); //500: 0 degree  2400: 180 degree
   myservo.attach(PIN_Servo_z);
   myservo.write(Position_angle); //sets the servo position according to the 90（middle）
-  _delay(500);
+  delay_xxx(500);
 
   myservo.attach(PIN_Servo_y, 500, 2400); //500: 0 degree  2400: 180 degree
   myservo.attach(PIN_Servo_y);
   myservo.write(Position_angle); //sets the servo position according to the 90（middle）
-  _delay(500);
+  delay_xxx(500);
   myservo.detach();
 }
 #if _Test_DeviceDriverSet
@@ -375,9 +347,9 @@ void DeviceDriverSet_Servo::DeviceDriverSet_Servo_Test(void)
   {
     myservo.attach(PIN_Servo_z);
     myservo.write(180);
-    _delay(500);
+    delay_xxx(500);
     myservo.write(0);
-    _delay(500);
+    delay_xxx(500);
   }
 
   // for (uint8_t i = 0; i < 6; i++)
@@ -411,40 +383,40 @@ void DeviceDriverSet_Servo::DeviceDriverSet_Servo_control(unsigned int Position_
 {
   myservo.attach(PIN_Servo_z);
   myservo.write(Position_angle);
-  _delay(450);
+  delay_xxx(450);
   myservo.detach();
 }
-//选择舵机、角度
+//Servo motor control:Servo motor number and position angle
 void DeviceDriverSet_Servo::DeviceDriverSet_Servo_controls(uint8_t Servo, unsigned int Position_angle)
 {
   if (Servo == 1 || Servo == 3) //Servo_z
   {
-    if (Position_angle <= 1) //下限控制
+    if (Position_angle <= 1) //minimum angle control
     {
       Position_angle = 1;
     }
-    if (Position_angle >= 17) //上下限控制
+    if (Position_angle >= 17) //maximum angle control
     {
       Position_angle = 17;
     }
     myservo.attach(PIN_Servo_z);
     myservo.write(10 * Position_angle);
-    _delay(500);
+    delay_xxx(500);
   }
   if (Servo == 2 || Servo == 3) //Servo_y
   {
 
-    if (Position_angle <= 3) //下限控制
+    if (Position_angle <= 3) //minimum angle control
     {
       Position_angle = 3;
     }
-    if (Position_angle >= 11) //上下限控制
+    if (Position_angle >= 11) //maximum angle control
     {
       Position_angle = 11;
     }
     myservo.attach(PIN_Servo_y);
     myservo.write(10 * Position_angle);
-    _delay(500);
+    delay_xxx(500);
   }
   myservo.detach();
 }
@@ -460,7 +432,7 @@ bool DeviceDriverSet_IRrecv::DeviceDriverSet_IRrecv_Get(uint8_t *IRrecv_Get /*ou
 {
   if (irrecv.decode(&results))
   {
-    IR_PreMillis = _millis();
+    IR_PreMillis = millis();
     switch (results.value)
     {
     case /* constant-expression */ aRECV_upper:
