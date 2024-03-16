@@ -24,7 +24,7 @@ private:
   // const char *password = "elegoo2020";
   char *ssid = "ELEGOO-";
   //char *password = "elegoo2020";
-  char *password = "";
+  char *password = "foobar";
 };
 
 #endif

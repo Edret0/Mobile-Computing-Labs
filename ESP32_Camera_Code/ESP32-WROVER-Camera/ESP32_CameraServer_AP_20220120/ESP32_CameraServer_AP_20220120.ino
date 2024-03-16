@@ -1,3 +1,5 @@
+
+
 /*
  * @Descripttion: 
  * @version: 
@@ -7,9 +9,18 @@
  * @LastEditTime: 2020-09-07 09:40:03
  */
 //#include <EEPROM.h>
+
+// Borrowed code from the ESP32 BLE Arduino library by Neil Kolban https://github.com/nkolban/ESP32_BLE_Arduino
+// I have used code from the BLE client and server examples to create the bluetooth connection.
 #include "CameraWebServer_AP.h"
 #include <WiFi.h>
+#include <BLEDevice.h>
+#include <BLEServer.h>
+#include <BLEUtils.h>
+#include <BLE2902.h>
 #include "esp_camera.h"
+
+
 WiFiServer server(100);
 
 #define RXD2 33
@@ -17,6 +28,26 @@ WiFiServer server(100);
 CameraWebServer_AP CameraWebServerAP;
 
 bool WA_en = false;
+
+BLEServer* pServer = NULL;
+BLECharacteristic* pCharacteristic = NULL;
+bool deviceConnected = false;
+bool oldDeviceConnected = false;
+uint32_t value = 0;
+
+#define SERVICE_UUID        "4fafc201-1fb5-459e-8fcc-c5c9c331914b"
+#define CHARACTERISTIC_UUID "beb5483e-36e1-4688-b7f5-ea07361b26a8"
+
+class HandleConnections: public BLEServerCallbacks {
+    void onConnect(BLEServer* pServer) {
+      deviceConnected = true;
+    };
+
+    void onDisconnect(BLEServer* pServer) {
+      deviceConnected = false;
+    }
+};
+
 
 void SocketServer_Test(void)
 {
@@ -182,12 +213,44 @@ void FactoryTest(void)
     }
   }
 }
+
 void setup()
 {
+  
+
+  Serial.println("\n\n");
   Serial.begin(9600);
   Serial2.begin(9600, SERIAL_8N1, RXD2, TXD2);
   //http://192.168.4.1/control?var=framesize&val=3
   //http://192.168.4.1/Test?var=
+  // bluetooth setup
+  BLEDevice::init("ESP32");
+  pServer = BLEDevice::createServer();
+  pServer->setCallbacks(new MyServerCallbacks());
+  BLEService *pService = pServer->createService(SERVICE_UUID);
+
+  
+pCharacteristic = pService->createCharacteristic(
+  CHARACTERISTIC_UUID,
+  BLECharacteristic::PROPERTY_READ | 
+  BLECharacteristic::PROPERTY_WRITE | 
+  BLECharacteristic::PROPERTY_NOTIFY | 
+  BLECharacteristic::PROPERTY_INDICATE
+  );
+  pCharacteristic->addDescriptor(new BLE2902());
+
+  
+  pService->start();
+
+  
+  BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
+  pAdvertising->addServiceUUID(SERVICE_UUID);
+  pAdvertising->setScanResponse(false);
+  pAdvertising->setMinPreferred(0x0); 
+  BLEDevice::startAdvertising();
+  Serial.println("Bluetooth working");
+  Serial.println("Waiting a client connection to notify...");
+  // bluetooth set up done
   CameraWebServerAP.CameraWebServer_AP_Init();
   server.begin();
   delay(100);
@@ -204,11 +267,36 @@ void setup()
   Serial.println("Elegoo-2020...");
   Serial2.print("{Factory}");
 }
+
+
 void loop()
 {
+  // handling connections for device 
+    if (deviceConnected) {
+      
+      
+      pCharacteristic->setValue((uint8_t*)&value, 4);
+      pCharacteristic->notify();
+      value++;
+      delay(3); 
+    }
+
+    if (!deviceConnected && oldDeviceConnected) {
+        delay(500); 
+        pServer->startAdvertising(); 
+        Serial.println("start advertising");
+        oldDeviceConnected = deviceConnected;
+    }
+    // connecting
+    if (deviceConnected && !oldDeviceConnected) {
+        
+        oldDeviceConnected = deviceConnected;
+    }
   SocketServer_Test();
-  FactoryTest();
+  FactoryTest(); 
 }
+
+
 
 /*
 C:\Program Files (x86)\Arduino\hardware\espressif\arduino-esp32/tools/esptool/esptool.exe --chip esp32 --port COM6 --baud 460800 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq 80m --flash_size detect 

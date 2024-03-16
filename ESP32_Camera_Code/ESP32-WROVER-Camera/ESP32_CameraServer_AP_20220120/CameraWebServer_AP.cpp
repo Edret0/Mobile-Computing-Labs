@@ -99,13 +99,13 @@ void CameraWebServer_AP::CameraWebServer_AP_Init(void)
   s->set_vflip(s, 0);
   s->set_hmirror(s, 1);
 #endif
-  s->set_vflip(s, 0);   //图片方向设置（上下）
+  s->set_vflip(s, 1);   //图片方向设置（上下）
   s->set_hmirror(s, 0); //图片方向设置（左右）
 
   // s->set_vflip(s, 1);   //图片方向设置（上下）
   // s->set_hmirror(s, 1); //图片方向设置（左右）
 
-  Serial.println("\r\n");
+  Serial.println(F("\r\n"));
 
   uint64_t chipid = ESP.getEfuseMac();
   char string[10];
@@ -116,15 +116,16 @@ void CameraWebServer_AP::CameraWebServer_AP_Init(void)
   String url = ssid + mac0_default + mac1_default;
   const char *mac_default = url.c_str();
 
-  Serial.println(":----------------------------:");
-  Serial.print("wifi_name:");
+  Serial.println(F(":----------------------------:"));
+  Serial.print(F("wifi_name:"));
   Serial.println(mac_default);
-  Serial.println(":----------------------------:");
+  Serial.println(F(":----------------------------:"));
   wifi_name = mac0_default + mac1_default;
 
   WiFi.setTxPower(WIFI_POWER_19_5dBm);
   WiFi.mode(WIFI_AP);
-  WiFi.softAP(mac_default, password, 9);
+  WiFi.softAP(mac_default, password);
+  //WiFi.begin(mac_default,password);
   startCameraServer();
 
   Serial.print("Camera Ready! Use 'http://");
