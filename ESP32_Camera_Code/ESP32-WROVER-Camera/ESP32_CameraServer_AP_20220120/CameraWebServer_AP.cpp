@@ -124,11 +124,56 @@ void CameraWebServer_AP::CameraWebServer_AP_Init(void)
 
   WiFi.setTxPower(WIFI_POWER_19_5dBm);
   WiFi.mode(WIFI_AP);
-  WiFi.softAP(mac_default, password);
-  //WiFi.begin(mac_default,password);
+  WiFi.softAP(mac_default, password,1,0);
+  
   startCameraServer();
-
+  
   Serial.print("Camera Ready! Use 'http://");
   Serial.print(WiFi.softAPIP());
   Serial.println("' to connect");
+  server.begin();
+  
 }
+
+#include <iostream>
+#include <string>
+
+void CameraWebServer_AP::CameraWebServer_AP_Get_Devices() {
+  wifi_sta_list_t stationList;
+  esp_wifi_ap_get_sta_list(&stationList);
+  WiFiClient client = server.available();
+
+
+  Serial.print("Number of connected devices: ");
+  Serial.println(stationList.num);
+  String currentMacAddress = "";
+  for (int i = 0; i < stationList.num; i++) {
+    Serial.print("Device ");
+    Serial.print(i + 1);
+    Serial.print(" - MAC Address: ");
+    for (int j = 0; j < 6; j++) {
+      //Serial.print(stationList.sta[i].mac[j], HEX);
+      currentMacAddress += String(stationList.sta[i].mac[j], HEX);
+      if (j < 5) {
+        //Serial.print(":");
+        currentMacAddress += String(":");
+      }
+    }
+    Serial.println(currentMacAddress);
+    
+    for(int j = 0; j < MAX_ADDRESSES; j++) {
+      
+      if (currentMacAddress.equals(CameraWebServer_AP::allowedMACAddresses[j])) {
+      client.stop();
+      Serial.println("Client disconnected by MAC address");
+      break;
+      }
+    }
+    Serial.println();
+  }
+  
+  delay(5000);
+}
+
+
+

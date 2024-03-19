@@ -23,8 +23,8 @@
 
 WiFiServer server(100);
 
-#define RXD2 33
-#define TXD2 4
+#define RXD2 34
+#define TXD2 35
 CameraWebServer_AP CameraWebServerAP;
 
 bool WA_en = false;
@@ -45,6 +45,21 @@ class HandleConnections: public BLEServerCallbacks {
 
     void onDisconnect(BLEServer* pServer) {
       deviceConnected = false;
+    }
+};
+
+
+
+class ClientToServerCallbacks : public BLECharacteristicCallbacks {
+    void onWrite(BLECharacteristic *pCharacteristic) {
+      
+      // prints command on the esp32
+      std::string value = pCharacteristic->getValue(); 
+      Serial.print("Received value: ");
+      Serial.println(value.c_str());
+
+      // send command to the shield
+      Serial2.write("foo");  
     }
 };
 
@@ -226,7 +241,7 @@ void setup()
   // bluetooth setup
   BLEDevice::init("ESP32");
   pServer = BLEDevice::createServer();
-  pServer->setCallbacks(new MyServerCallbacks());
+  pServer->setCallbacks(new HandleConnections());
   BLEService *pService = pServer->createService(SERVICE_UUID);
 
   
@@ -238,6 +253,7 @@ pCharacteristic = pService->createCharacteristic(
   BLECharacteristic::PROPERTY_INDICATE
   );
   pCharacteristic->addDescriptor(new BLE2902());
+  pCharacteristic->setCallbacks(new ClientToServerCallbacks());
 
   
   pService->start();
@@ -248,9 +264,11 @@ pCharacteristic = pService->createCharacteristic(
   pAdvertising->setScanResponse(false);
   pAdvertising->setMinPreferred(0x0); 
   BLEDevice::startAdvertising();
+  Serial.println("\n\n");
   Serial.println("Bluetooth working");
   Serial.println("Waiting a client connection to notify...");
   // bluetooth set up done
+  
   CameraWebServerAP.CameraWebServer_AP_Init();
   server.begin();
   delay(100);
@@ -269,12 +287,12 @@ pCharacteristic = pService->createCharacteristic(
 }
 
 
+
 void loop()
 {
+  
   // handling connections for device 
     if (deviceConnected) {
-      
-      
       pCharacteristic->setValue((uint8_t*)&value, 4);
       pCharacteristic->notify();
       value++;
@@ -294,6 +312,7 @@ void loop()
     }
   SocketServer_Test();
   FactoryTest(); 
+  CameraWebServerAP.CameraWebServer_AP_Get_Devices();
 }
 
 
