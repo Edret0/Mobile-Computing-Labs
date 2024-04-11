@@ -105,7 +105,8 @@ void CameraWebServer_AP::CameraWebServer_AP_Init(void)
   // s->set_vflip(s, 1);   //图片方向设置（上下）
   // s->set_hmirror(s, 1); //图片方向设置（左右）
 
-  Serial.println(F("\r\n"));
+  
+  Serial.println("\r\n");
 
   uint64_t chipid = ESP.getEfuseMac();
   char string[10];
@@ -116,64 +117,18 @@ void CameraWebServer_AP::CameraWebServer_AP_Init(void)
   String url = ssid + mac0_default + mac1_default;
   const char *mac_default = url.c_str();
 
-  Serial.println(F(":----------------------------:"));
-  Serial.print(F("wifi_name:"));
+  Serial.println(":----------------------------:");
+  Serial.print("wifi_name:");
   Serial.println(mac_default);
-  Serial.println(F(":----------------------------:"));
+  Serial.println(":----------------------------:");
   wifi_name = mac0_default + mac1_default;
 
   WiFi.setTxPower(WIFI_POWER_19_5dBm);
   WiFi.mode(WIFI_AP);
-  WiFi.softAP(mac_default, password,1,0);
-  
+  WiFi.softAP(mac_default, password, 1);
   startCameraServer();
-  
+
   Serial.print("Camera Ready! Use 'http://");
   Serial.print(WiFi.softAPIP());
   Serial.println("' to connect");
-  server.begin();
-  
 }
-
-#include <iostream>
-#include <string>
-
-void CameraWebServer_AP::CameraWebServer_AP_Get_Devices() {
-  wifi_sta_list_t stationList;
-  esp_wifi_ap_get_sta_list(&stationList);
-  WiFiClient client = server.available();
-
-
-  Serial.print("Number of connected devices: ");
-  Serial.println(stationList.num);
-  String currentMacAddress = "";
-  for (int i = 0; i < stationList.num; i++) {
-    Serial.print("Device ");
-    Serial.print(i + 1);
-    Serial.print(" - MAC Address: ");
-    for (int j = 0; j < 6; j++) {
-      //Serial.print(stationList.sta[i].mac[j], HEX);
-      currentMacAddress += String(stationList.sta[i].mac[j], HEX);
-      if (j < 5) {
-        //Serial.print(":");
-        currentMacAddress += String(":");
-      }
-    }
-    Serial.println(currentMacAddress);
-    
-    for(int j = 0; j < MAX_ADDRESSES; j++) {
-      
-      if (currentMacAddress.equals(CameraWebServer_AP::allowedMACAddresses[j])) {
-      client.stop();
-      Serial.println("Client disconnected by MAC address");
-      break;
-      }
-    }
-    Serial.println();
-  }
-  
-  delay(5000);
-}
-
-
-

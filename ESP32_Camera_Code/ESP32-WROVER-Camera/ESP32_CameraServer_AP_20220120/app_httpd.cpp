@@ -17,7 +17,7 @@
 #include "img_converters.h"
 #include "camera_index.h"
 #include "Arduino.h"
-
+#include <ArduinoJson.h>
 #include "fb_gfx.h"
 #include "fd_forward.h"
 #include "fr_forward.h"
@@ -532,6 +532,64 @@ static esp_err_t cmd_handler(httpd_req_t *req)
         }
         if (httpd_req_get_url_query_str(req, buf, buf_len) == ESP_OK)
         {
+          if(httpd_query_key_value(buf, "var", variable, sizeof(variable)) == ESP_OK) {
+            if(strcmp(variable,"forward") == 0) {
+              JsonDocument doc;
+
+              String s;
+              doc["N"] = 102;
+              doc["D1"] = 1;
+              doc["D2"] = 254;
+              serializeJsonPretty(doc, Serial2);
+              delay(500);
+
+              doc.clear();
+              doc["N"] = 100;
+              serializeJsonPretty(doc,Serial2);
+            }
+            else if(strcmp(variable,"backward") == 0) {
+              JsonDocument doc;
+
+              String s;
+              doc["N"] = 102;
+              doc["D1"] = 2;
+              doc["D2"] = 254;
+              serializeJsonPretty(doc, Serial2);
+              delay(500);
+
+              doc.clear();
+              doc["N"] = 100;
+              serializeJsonPretty(doc,Serial2);
+            }
+            else if(strcmp(variable,"left") == 0) {
+              JsonDocument doc;
+
+              String s;
+              doc["N"] = 102;
+              doc["D1"] = 3;
+              doc["D2"] = 254;
+              serializeJsonPretty(doc, Serial2);
+              delay(250);
+
+              doc.clear();
+              doc["N"] = 100;
+              serializeJsonPretty(doc,Serial2);
+            }
+            else if(strcmp(variable,"right") == 0) {
+              JsonDocument doc;
+
+              String s;
+              doc["N"] = 102;
+              doc["D1"] = 4;
+              doc["D2"] = 254;
+              serializeJsonPretty(doc, Serial2);
+              delay(250);
+
+              doc.clear();
+              doc["N"] = 100;
+              serializeJsonPretty(doc,Serial2);
+            }
+          }
             if (httpd_query_key_value(buf, "var", variable, sizeof(variable)) == ESP_OK &&
                 httpd_query_key_value(buf, "val", value, sizeof(value)) == ESP_OK)
             {
@@ -700,7 +758,9 @@ static esp_err_t index_handler(httpd_req_t *req)
     }
     return httpd_resp_send(req, (const char *)index_ov2640_html_gz, index_ov2640_html_gz_len);
 }
-// //图片帧流（实时视频）Test
+
+
+//图片帧流（实时视频）Test
 // static esp_err_t Test_handler(httpd_req_t *req)
 // {
 //     camera_fb_t *fb = NULL;
@@ -921,6 +981,66 @@ static esp_err_t Test2_handler(httpd_req_t *req)
     httpd_resp_send(req, (const char *)"index", 5);
     return ESP_OK;
 }
+
+static esp_err_t controller_handler(httpd_req_t *req) {
+  httpd_resp_set_type(req, "text/html");
+
+    const char *html_content = 
+    "<html>"
+    "<head>"
+    "<title>Web Server With Live Stream</title>"
+    "<style>"
+    "body {"
+    "    font-family: Arial, sans-serif;"
+    "    text-align: center;"
+    "}"
+    "h1 {"
+    "    margin-top: 50px;"
+    "}"
+    ".button {"
+    "    display: inline-block;"
+    "    border-radius: 4px;"
+    "    background-color: #4CAF50;"
+    "    border: none;"
+    "    color: white;"
+    "    text-align: center;"
+    "    font-size: 20px;"
+    "    padding: 15px;"
+    "    width: 150px;"
+    "    transition: all 0.5s;"
+    "    cursor: pointer;"
+    "    margin: 10px 5px;" // Adjusted margin to provide spacing between buttons
+    "}"
+    ".button:hover {"
+    "    background-color: #45a049;"
+    "}"
+    "</style>"
+    "</head>"
+    "<body>"
+    "<h1>Live Stream And Controller</h1>"
+    "<button class=\"button\" onclick=\"sendRequest('forward')\">Forward</button>"
+    "<button class=\"button\" onclick=\"sendRequest('backward')\">Backward</button>"
+    "<br>"
+    "<button class=\"button\" onclick=\"sendRequest('left')\">Left</button>"
+    "<button class=\"button\" onclick=\"sendRequest('right')\">Right</button>"
+    "<br>"
+    "<img src=\"/Test\">"
+    "<script>"
+    "function sendRequest(direction) {"
+    "  var xhr = new XMLHttpRequest();"
+    "  xhr.open('GET', '/control?var=' + direction, true);"
+    "  xhr.send();"
+    "return false;"
+    "}"
+    "</script>"
+    "</body>"
+    "</html>";
+
+
+
+    // Send the HTML content as the response
+    return httpd_resp_send(req, html_content, strlen(html_content));
+}
 void startCameraServer()
 {
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
@@ -930,6 +1050,13 @@ void startCameraServer()
         .method = HTTP_GET,
         .handler = index_handler,
         .user_ctx = NULL};
+
+    httpd_uri_t controller_uri = {
+    .uri       = "/controller",
+    .method    = HTTP_GET,
+    .handler   = controller_handler,
+    .user_ctx  = NULL
+    };
 
     httpd_uri_t status_uri = {
         .uri = "/status",
@@ -1001,6 +1128,7 @@ void startCameraServer()
         httpd_register_uri_handler(camera_httpd, &Test_uri);
         httpd_register_uri_handler(camera_httpd, &Test1_uri);
         httpd_register_uri_handler(camera_httpd, &Test2_uri);
+        httpd_register_uri_handler(camera_httpd, &controller_uri);
     }
     config.server_port += 1; //视频流端口
     config.ctrl_port += 1;
