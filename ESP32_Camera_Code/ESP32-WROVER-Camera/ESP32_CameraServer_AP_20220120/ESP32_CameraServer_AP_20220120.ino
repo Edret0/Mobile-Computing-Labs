@@ -10,6 +10,7 @@
 #include "CameraWebServer_AP.h"
 #include <WiFi.h>
 #include "esp_camera.h"
+#include "BluetoothServer.h"
 WiFiServer server(100);
 
 #define RXD2 33
@@ -186,6 +187,8 @@ void setup()
 {
   Serial.begin(9600);
   Serial2.begin(9600, SERIAL_8N1, RXD2, TXD2);
+  setupBluetooth();
+  Serial.println("Starting bluetooth server");
   //http://192.168.4.1/control?var=framesize&val=3
   //http://192.168.4.1/Test?var=
   CameraWebServerAP.CameraWebServer_AP_Init();
@@ -206,6 +209,7 @@ void setup()
 }
 void loop()
 {
+  loopBluetooth();
   SocketServer_Test();
   FactoryTest();
 }
