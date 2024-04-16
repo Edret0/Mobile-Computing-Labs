@@ -83,5 +83,5 @@ thingClient = boto3.client('iot')
 ##########################################################
 
 # Main Loop to create 500 things
-for i in range(500): 
+for i in range(1): 
     createThing()
