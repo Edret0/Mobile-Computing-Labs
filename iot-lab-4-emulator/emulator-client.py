@@ -60,13 +60,14 @@ class MQTTClient:
     def customPubackCallback(self,mid):
         #You don't need to write anything here
         pass
-
-
-    def publish(self, Payload):
-        #TODO4: fill in this function for your publish
-        self.client.subscribeAsync("myTopic", 0, ackCallback=self.customSubackCallback)
-        
-        self.client.publishAsync("myTopic", Payload, 0, ackCallback=self.customPubackCallback)
+    
+    def publish(self, payload):
+        # Convert DataFrame to dictionary
+        payload_dict = payload.to_dict(orient='records')
+        # Serialize dictionary to JSON
+        payload_json = json.dumps(payload_dict)
+        # Publish the JSON payload
+        self.client.publishAsync("car_Info", payload_json, 0, ackCallback=self.customPubackCallback)         
 
 
 print("Loading vehicle data...")
@@ -89,10 +90,7 @@ while True:
     x = input()
     if x == "s":
        for i, c in enumerate(clients):
-            #payload = data[i].to_dict(orient='list')  # Convert DataFrame to dictionary
-            #print("Payload for device {}: {}".format(i, json.dumps(payload)))
-            #c.publish(json.dumps(payload))  # Pass data as payload after converting to JSON
-            c.publish(data[i])  # Pass data as payload
+           c.publish(data[i])  # Pass data as payload
        print("Messages sent")
     elif x == "d":
        for c in clients:
