@@ -9,15 +9,14 @@ import numpy as np
 import random
 
 
-#TODO 1: modify the following parameters
-#Starting and end index, modify this
+#Starting and end index
 device_st = 0
 device_end = 3
 
-#Path to the dataset, modify this
+#Path to the dataset
 data_path = "C:/Mobile-Computing-Labs/iot-lab-4-emulator/data/vehicle{}.csv"
 
-#Path to your certificates, modify this
+#Path to your certificates
 certificate_formatter = r"C:/Mobile-Computing-Labs/iot-lab-4-emulator/certificates/{}/cert_thing_{}.pem"
 key_formatter = r"C:/Mobile-Computing-Labs/iot-lab-4-emulator/private_certificates/{}/private_thing_{}.key"
 
@@ -27,7 +26,6 @@ class MQTTClient:
         self.thing_name = str(thing_name)
         self.state = 0
         self.client = AWSIoTMQTTClient(self.thing_name)
-        #TODO 2: modify your broker address
         self.client.configureEndpoint("a3rejv7izsyui2-ats.iot.us-east-1.amazonaws.com", 8883)
         self.client.configureCredentials(r"C:/Mobile-Computing-Labs/iot-lab-4-emulator/AmazonRootCA1.pem", key, cert)
         self.client.configureOfflinePublishQueueing(-1)  # Infinite offline Publish queueing
@@ -46,9 +44,8 @@ class MQTTClient:
                        
             
     def customOnMessage(self,message):
-        #TODO3: fill in the function to show your received message
-        print("client {} received payload {} from topic {}".format(self.device_id, message.payload, message.topic))
-
+        print("Recived")
+        #print("Received payload {} from topic {}".format(message.payload, message.topic))
 
     # Suback callbacks
     def customSubackCallback(self,mid, data):
@@ -67,7 +64,17 @@ class MQTTClient:
         # Serialize dictionary to JSON
         payload_json = json.dumps(payload_dict)
         # Publish the JSON payload
-        self.client.publishAsync("car_Info", payload_json, 0, ackCallback=self.customPubackCallback)         
+        self.client.publishAsync("car_Info", payload_json, 0, ackCallback=self.customPubackCallback)    
+        
+    def subscribe(self, topic):
+        """
+        Subscribe to a given topic asynchronously.
+        
+        Parameters:
+        - topic (str): The topic to subscribe to.
+        """
+        self.client.subscribeAsync(topic, 1, ackCallback=self.customSubackCallback)
+        print("Subscribed to topic:", topic)     
 
 
 print("Loading vehicle data...")
@@ -84,6 +91,10 @@ for i in range(device_st, device_end):
     key_path = key_formatter.format(i, i)  
     client = MQTTClient(i, cert_path, key_path)     
     clients.append(client)
+    
+    # Subscribe to topics after creating clients
+for client in clients:
+    client.subscribe("car_Info")  # Adjust the topic name as needed
 
 while True:
     print("Send now? (s), Disconnect (d)")
