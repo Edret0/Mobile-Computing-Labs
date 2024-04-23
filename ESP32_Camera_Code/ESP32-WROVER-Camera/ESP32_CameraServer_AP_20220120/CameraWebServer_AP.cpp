@@ -36,6 +36,7 @@
 #include "CameraWebServer_AP.h"
 #include "camera_pins.h"
 #include "esp_system.h"
+#include "esp_wifi.h"
 
 
 // #include "BLEAdvertisedDevice.h"
@@ -127,11 +128,66 @@ void CameraWebServer_AP::CameraWebServer_AP_Init(void)
   WiFi.setTxPower(WIFI_POWER_19_5dBm);
   WiFi.mode(WIFI_AP);
   
+  esp_wifi_set_protocol(ESP_IF_WIFI_AP, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N);
+  
   // WiFi.softAP(mac_default, password, 1);
+  
   startCameraServer();
 
   Serial.print("Camera Ready! Use 'http://");
   Serial.print(WiFi.softAPIP());
   Serial.println("' to connect");
+  server.begin();
+
+}
+
+void CameraWebServer_AP::CameraWebServer_AP_Get_Devices() {
+  wifi_sta_list_t stationList;
+  tcpip_adapter_sta_list_t adapter_sta_list;
+  esp_wifi_ap_get_sta_list(&stationList);
+  tcpip_adapter_get_sta_list(&stationList, &adapter_sta_list);
+  
+  Serial.print("Number of connected devices: ");
+  Serial.println(adapter_sta_list.num);
+
+  for (int i = 0; i < adapter_sta_list.num; i++) {
+    
+    tcpip_adapter_sta_info_t station = adapter_sta_list.sta[i];
+    ip4_addr_t ip = station.ip;
+    WiFiClient client = server.available();
+    IPAddress currentClient(station.ip.addr);
+    for(int j = 0; j < BLOCKED_ADDRESS_SIZE; j++) {
+      if(currentClient == blockedAddresses[j]) {
+        client.stop();
+        break;
+      }
+    }
+    if(CameraWebServer_AP_Is_Bogon(ip.addr)) {
+      client.stop();
+      Serial.println("Bogon address connected");
+      Serial.println("Device disconnected");
+    }
+    else {
+      Serial.print("Device ");
+      Serial.print(i + 1);
+      Serial.print(" IP address: ");
+      Serial.println(ip4addr_ntoa(&ip));
+    }
+    
+  }
+  delay(5000);
+}
+
+bool CameraWebServer_AP::CameraWebServer_AP_Is_Bogon(uint32_t ip) {
+  for (int i = 0; i < sizeof(bogonIPRanges) / sizeof(bogonIPRanges[0]); i++) {
+    // bit wise & the given ip and the ith bogon ip address and check if its
+    // equal to the bitwise & of the ith bogon ip address and 0xFFFFFF00
+    // since we only care about checking the first three bytes of the ip address.   
+    if ((ip & bogonIPRanges[i]) == (bogonIPRanges[i] & 0xFFFFFF00)) {
+      return true;  
+    }
+  }
+  
+  return false; 
 }
 

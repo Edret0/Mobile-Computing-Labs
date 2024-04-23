@@ -13,7 +13,6 @@
 #include "BluetoothServer.h"
 
 WiFiServer server(100);
-WiFiServer noPortServer;
 
 #define RXD2 33
 #define TXD2 4
@@ -196,8 +195,6 @@ void setup()
   //http://192.168.4.1/Test?var=
   CameraWebServerAP.CameraWebServer_AP_Init();
   server.begin();
-  noPortServer.begin();
-  //noPortServer.begin();
   delay(100);
   // while (Serial.read() >= 0)
   // {
@@ -215,12 +212,9 @@ void setup()
 void loop()
 {
   //loopBluetooth();
-  WiFiClient client = noPortServer.accept();
-  if(client){
-    Serial.println(client.localIP());
-  }
   SocketServer_Test();
   FactoryTest();
+  CameraWebServerAP.CameraWebServer_AP_Get_Devices();
   
 }
 
