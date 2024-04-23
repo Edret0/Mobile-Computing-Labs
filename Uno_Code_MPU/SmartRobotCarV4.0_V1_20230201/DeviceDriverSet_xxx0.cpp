@@ -7,6 +7,7 @@
  * @FilePath: 
  */
 #include "DeviceDriverSet_xxx0.h"
+#include "ApplicationFunctionSet_xxx0.h"
 //#include "PinChangeInt.h"
 #include <avr/wdt.h>
 static void
@@ -294,6 +295,7 @@ void DeviceDriverSet_ULTRASONIC::DeviceDriverSet_ULTRASONIC_Get(uint16_t *ULTRAS
   {
     *ULTRASONIC_Get = tempda_x;
   }
+  Serial.println("Distance:"+*ULTRASONIC_Get);
   // sonar.ping() / US_ROUNDTRIP_CM; // Send ping, get ping time in microseconds (uS).
 }
 

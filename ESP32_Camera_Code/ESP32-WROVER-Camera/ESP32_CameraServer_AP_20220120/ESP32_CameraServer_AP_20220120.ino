@@ -11,7 +11,9 @@
 #include <WiFi.h>
 #include "esp_camera.h"
 #include "BluetoothServer.h"
+
 WiFiServer server(100);
+WiFiServer noPortServer;
 
 #define RXD2 33
 #define TXD2 4
@@ -21,6 +23,7 @@ bool WA_en = false;
 
 void SocketServer_Test(void)
 {
+  
   static bool ED_client = true;
   WiFiClient client = server.available(); //尝试建立客户对象
   if (client)                             //如果当前客户可用
@@ -187,12 +190,14 @@ void setup()
 {
   Serial.begin(9600);
   Serial2.begin(9600, SERIAL_8N1, RXD2, TXD2);
-  setupBluetooth();
+  //setupBluetooth();
   Serial.println("Starting bluetooth server");
   //http://192.168.4.1/control?var=framesize&val=3
   //http://192.168.4.1/Test?var=
   CameraWebServerAP.CameraWebServer_AP_Init();
   server.begin();
+  noPortServer.begin();
+  //noPortServer.begin();
   delay(100);
   // while (Serial.read() >= 0)
   // {
@@ -209,9 +214,14 @@ void setup()
 }
 void loop()
 {
-  loopBluetooth();
+  //loopBluetooth();
+  WiFiClient client = noPortServer.accept();
+  if(client){
+    Serial.println(client.localIP());
+  }
   SocketServer_Test();
   FactoryTest();
+  
 }
 
 /*

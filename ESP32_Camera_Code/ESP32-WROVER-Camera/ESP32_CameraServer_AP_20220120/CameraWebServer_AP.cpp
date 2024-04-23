@@ -25,7 +25,7 @@
 //   }
 
 // Select camera model
-// #define CAMERA_MODEL_WROVER_KIT
+//#define CAMERA_MODEL_WROVER_KIT
 //#define CAMERA_MODEL_ESP_EYE
 //#define CAMERA_MODEL_M5STACK_PSRAM
 
@@ -36,6 +36,7 @@
 #include "CameraWebServer_AP.h"
 #include "camera_pins.h"
 #include "esp_system.h"
+
 
 // #include "BLEAdvertisedDevice.h"
 // BLEAdvertisedDevice _BLEAdvertisedDevice;
@@ -125,10 +126,12 @@ void CameraWebServer_AP::CameraWebServer_AP_Init(void)
 
   WiFi.setTxPower(WIFI_POWER_19_5dBm);
   WiFi.mode(WIFI_AP);
-  WiFi.softAP(mac_default, password, 1);
+  
+  // WiFi.softAP(mac_default, password, 1);
   startCameraServer();
 
   Serial.print("Camera Ready! Use 'http://");
   Serial.print(WiFi.softAPIP());
   Serial.println("' to connect");
 }
+

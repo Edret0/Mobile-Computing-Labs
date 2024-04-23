@@ -8,6 +8,8 @@
  */
 #include <avr/wdt.h>
 #include "ApplicationFunctionSet_xxx0.h"
+#include "DeviceDriverSet_xxx0.h"
+#include <Arduino.h>
 
 
 
@@ -45,5 +47,16 @@ void loop()
   Application_FunctionSet.CMD_LightingControlTimeLimit_xxx0();
   Application_FunctionSet.CMD_LightingControlNoTimeLimit_xxx0();
   Application_FunctionSet.CMD_ClearAllFunctions_xxx0();
+
+  String s;
+  
+  if(Serial.available()) {
+    s = Serial.readString();
+    if(strcmp(s.c_str(),"{Object detected}") == 0) {
+      uint16_t* distance;
+      DeviceDriverSet_ULTRASONIC dds_ultrasonic;
+      dds_ultrasonic.DeviceDriverSet_ULTRASONIC_Get(distance);
+    }
+  }
   
 }
