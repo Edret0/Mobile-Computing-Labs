@@ -33,7 +33,7 @@ private:
   // const char *password = "elegoo2020";
   char *ssid = "ELEGOO-";
   //char *password = "elegoo2020";
-  char *password = "";
+  char *password = "FooBarBizzBuzz1@";
 
   // bogon Ipv4 address
   const uint32_t bogonIPRanges[TOTAL_BOGON_ADDRESSES] = {
